@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KONSISTEN — Jurnal Harian</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#030a03;--bg2:#060f06;--bg3:#0a160a;
+  --green:#00ff41;--green-dim:#00c832;--green-dark:#003d0f;
+  --green-glow:rgba(0,255,65,0.15);--green-glow2:rgba(0,255,65,0.05);
+  --text:#b8ffca;--text-dim:#5a8c6a;
+  --border:rgba(0,255,65,0.2);--border-bright:rgba(0,255,65,0.5);
+  --red:#ff2244;--yellow:#ffcc00;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-display:'Orbitron',sans-serif;
+  --font-body:'Rajdhani',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,0.015) 2px,rgba(0,255,65,0.015) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,65,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,65,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem}
+#login-screen.hidden{display:none}
+.login-box{width:100%;max-width:420px;background:var(--bg2);border:1px solid var(--border-bright);border-radius:8px;padding:2.5rem;box-shadow:0 0 80px rgba(0,255,65,.12);animation:modalIn .3s ease}
+.login-logo{font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--green);text-shadow:0 0 30px var(--green);letter-spacing:6px;text-align:center;margin-bottom:.3rem}
+.login-sub{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);text-align:center;letter-spacing:3px;margin-bottom:2rem}
+.login-tabs{display:flex;margin-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.login-tab{flex:1;padding:.6rem;background:none;border:none;font-family:var(--font-display);font-size:.6rem;letter-spacing:2px;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.login-tab.active{color:var(--green);border-bottom-color:var(--green)}
+.login-panel{display:none}.login-panel.active{display:block}
+.lf{margin-bottom:1rem}
+.lf label{font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);display:block;margin-bottom:.4rem}
+.lf input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:1rem;padding:.7rem 1rem;border-radius:3px;outline:none;transition:border-color .2s,box-shadow .2s}
+.lf input:focus{border-color:var(--green);box-shadow:0 0 15px rgba(0,255,65,.1)}
+.login-btn{width:100%;padding:.8rem;background:transparent;border:1px solid var(--green);color:var(--green);font-family:var(--font-display);font-size:.65rem;letter-spacing:3px;cursor:pointer;border-radius:3px;transition:all .2s;margin-top:.5rem}
+.login-btn:hover{background:var(--green);color:var(--bg);box-shadow:0 0 25px rgba(0,255,65,.4)}
+.login-err{font-family:var(--font-mono);font-size:.7rem;color:var(--red);margin-top:.7rem;text-align:center;min-height:1.2em}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(3,10,3,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(10px);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;box-shadow:0 0 30px rgba(0,255,65,.08)}
+.logo{font-family:var(--font-display);font-size:1.1rem;font-weight:900;color:var(--green);text-shadow:0 0 20px var(--green);letter-spacing:3px}
+.logo span{color:var(--text-dim);font-weight:400;font-size:.55rem;letter-spacing:2px;display:block}
+.header-right{display:flex;align-items:center;gap:.8rem}
+.header-date{font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);text-align:right}
+.header-date strong{color:var(--green);display:block;font-size:.8rem}
+.user-badge{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem;padding:.3rem .7rem;border:1px solid var(--border);border-radius:3px}
+.user-badge .un{color:var(--green)}
+.logout-btn{background:none;border:1px solid var(--red);color:var(--red);font-family:var(--font-mono);font-size:.5rem;padding:.2rem .6rem;border-radius:2px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{background:var(--red);color:#fff}
+
+/* NAV */
+.nav-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:60px;z-index:99}
+.tab-btn{font-family:var(--font-display);font-size:.58rem;letter-spacing:2px;padding:.9rem 1.1rem;background:none;border:none;color:var(--text-dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{color:var(--green);background:var(--green-glow2)}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);background:var(--green-glow2);text-shadow:0 0 10px rgba(0,255,65,.5)}
+
+/* LAYOUT */
+main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:1.5rem}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1.4rem;margin-bottom:1.2rem;position:relative;transition:border-color .3s}
+.card:hover{border-color:var(--border-bright)}
+.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);box-shadow:0 0 10px var(--green);border-radius:4px 0 0 4px}
+.card-title{font-family:var(--font-display);font-size:.62rem;letter-spacing:3px;color:var(--green);margin-bottom:1rem;text-shadow:0 0 8px rgba(0,255,65,.4)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+@media(max-width:900px){.grid-2,.grid-4{grid-template-columns:1fr}}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:1.1rem;text-align:center;position:relative;overflow:hidden}
+.stat-box::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent)}
+.stat-num{font-family:var(--font-display);font-size:1.9rem;font-weight:900;color:var(--green);text-shadow:0 0 20px var(--green);line-height:1}
+.stat-label{font-family:var(--font-mono);font-size:.53rem;color:var(--text-dim);letter-spacing:2px;margin-top:.35rem}
+
+input[type="text"],input[type="password"],textarea,select{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:.95rem;padding:.65rem .9rem;border-radius:3px;outline:none;width:100%;transition:border-color .2s,box-shadow .2s}
+input[type="text"]:focus,input[type="password"]:focus,textarea:focus,select:focus{border-color:var(--green);box-shadow:0 0 15px rgba(0,255,65,.1)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+select option{background:var(--bg2)}
+.form-row{display:flex;gap:.7rem;align-items:center;margin-bottom:.7rem}
+.form-row label{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);white-space:nowrap}
+
+.btn{font-family:var(--font-display);font-size:.58rem;letter-spacing:2px;padding:.55rem 1.2rem;border:1px solid var(--green);background:transparent;color:var(--green);cursor:pointer;border-radius:3px;transition:all .2s}
+.btn:hover{background:var(--green);color:var(--bg);box-shadow:0 0 20px rgba(0,255,65,.4)}
+.btn-sm{font-size:.5rem;padding:.32rem .65rem}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-ghost{border-color:var(--border);color:var(--text-dim)}
+.btn-ghost:hover{border-color:var(--green);color:var(--green);background:var(--green-glow2)}
+
+.habit-list{display:flex;flex-direction:column;gap:.5rem}
+.habit-item{display:flex;align-items:center;gap:.7rem;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.75rem .9rem;transition:all .2s;position:relative;overflow:hidden}
+.habit-item.done{border-color:rgba(0,255,65,.4);background:rgba(0,255,65,.04)}
+.habit-item.done::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,255,65,.05),transparent)}
+.habit-check{width:22px;height:22px;border:2px solid var(--text-dim);border-radius:3px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.8rem;user-select:none}
+.habit-item.done .habit-check{border-color:var(--green);background:var(--green);color:var(--bg);box-shadow:0 0 10px rgba(0,255,65,.5)}
+.habit-name{font-size:.95rem;font-weight:500;flex:1}
+.habit-item.done .habit-name{color:var(--green);text-shadow:0 0 8px rgba(0,255,65,.3)}
+.habit-streak{font-family:var(--font-mono);font-size:.58rem;color:var(--text-dim);display:flex;align-items:center;gap:3px}
+.habit-streak span{color:var(--yellow)}
+.habit-category{font-family:var(--font-mono);font-size:.48rem;padding:2px 7px;border-radius:20px;border:1px solid;white-space:nowrap}
+
+.journal-entry{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.9rem 1rem;margin-bottom:.7rem;cursor:pointer;transition:all .2s}
+.journal-entry:hover{border-color:var(--border-bright);background:rgba(0,255,65,.03)}
+.journal-entry.selected-journal{border-color:var(--green);background:rgba(0,255,65,.06)}
+.journal-entry-date{font-family:var(--font-mono);font-size:.58rem;color:var(--text-dim);margin-bottom:.3rem}
+.journal-entry-preview{font-size:.85rem;color:var(--text);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+.progress-bar-wrap{background:var(--bg3);border-radius:2px;height:6px;overflow:hidden;flex:1}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--green-dark),var(--green));box-shadow:0 0 8px var(--green);transition:width .5s ease;border-radius:2px}
+
+.chart-wrap{position:relative;height:250px}
+.chart-wrap-tall{height:320px}
+
+.heatmap-grid{display:grid;grid-template-columns:repeat(53,1fr);gap:3px;margin-top:.5rem}
+.heatmap-cell{aspect-ratio:1;border-radius:2px;background:var(--bg3);border:1px solid rgba(0,255,65,.05);cursor:pointer;position:relative}
+.heatmap-cell:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);font-size:.58rem;padding:3px 8px;border-radius:3px;white-space:nowrap;z-index:20;pointer-events:none}
+.heatmap-cell[data-level="1"]{background:rgba(0,200,50,.2)}
+.heatmap-cell[data-level="2"]{background:rgba(0,200,50,.4)}
+.heatmap-cell[data-level="3"]{background:rgba(0,200,50,.65)}
+.heatmap-cell[data-level="4"]{background:var(--green);box-shadow:0 0 6px rgba(0,255,65,.5)}
+.heatmap-months{display:flex;font-family:var(--font-mono);font-size:.52rem;color:var(--text-dim);margin-bottom:3px}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border-bright);border-radius:6px;padding:2rem;width:100%;max-width:540px;box-shadow:0 0 60px rgba(0,255,65,.15);animation:modalIn .2s ease;position:relative}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(-10px)}to{opacity:1;transform:none}}
+.modal-title{font-family:var(--font-display);font-size:.72rem;letter-spacing:3px;color:var(--green);margin-bottom:1.2rem;text-shadow:0 0 10px rgba(0,255,65,.4)}
+.modal-close{position:absolute;top:.9rem;right:.9rem;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.2rem}
+
+.mood-selector{display:flex;gap:.4rem;flex-wrap:wrap}
+.mood-opt{border:1px solid var(--border);border-radius:4px;padding:.45rem .7rem;cursor:pointer;font-size:1.2rem;transition:all .2s;background:var(--bg3)}
+.mood-opt:hover{border-color:var(--green);transform:scale(1.1)}
+.mood-opt.selected{border-color:var(--green);background:var(--green-glow);box-shadow:0 0 12px rgba(0,255,65,.3)}
+
+.cat-health{color:#00ff99;border-color:#00ff99}
+.cat-kerja{color:#00cfff;border-color:#00cfff}
+.cat-belajar{color:#ffcc00;border-color:#ffcc00}
+.cat-pribadi{color:#ff88cc;border-color:#ff88cc}
+.cat-keuangan{color:#ff9900;border-color:#ff9900}
+
+/* DATE NAVIGATOR */
+.date-nav-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.8rem 1rem;margin-bottom:.8rem}
+.date-nav-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;flex-wrap:wrap}
+.week-nav-row{display:flex;align-items:center;gap:.5rem}
+.nav-arrow{background:none;border:1px solid var(--border);color:var(--text-dim);width:34px;height:34px;border-radius:3px;cursor:pointer;font-size:1rem;transition:all .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-arrow:hover{border-color:var(--green);color:var(--green)}
+.nav-arrow:disabled{opacity:.25;cursor:not-allowed}
+.week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:.4rem;flex:1}
+.week-day-cell{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .3rem;text-align:center;cursor:pointer;transition:all .2s}
+.week-day-cell:hover{border-color:var(--border-bright)}
+.week-day-cell.today{border-color:var(--green);box-shadow:0 0 8px rgba(0,255,65,.2)}
+.week-day-cell.selected{background:var(--green-glow);border-color:var(--green)}
+.week-day-cell.future{opacity:.35;cursor:not-allowed;pointer-events:none}
+.wdn{font-family:var(--font-mono);font-size:.48rem;color:var(--text-dim)}
+.wdnum{font-family:var(--font-display);font-size:.95rem;font-weight:700;color:var(--text)}
+.week-day-cell.today .wdnum{color:var(--green);text-shadow:0 0 8px var(--green)}
+.wdpct{font-family:var(--font-mono);font-size:.47rem;color:var(--text-dim);margin-top:2px}
+.week-range-label{font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);padding:.25rem .6rem;border:1px solid var(--border);border-radius:3px}
+
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--bg2);border:1px solid var(--green);color:var(--green);font-family:var(--font-mono);font-size:.68rem;padding:.75rem 1.1rem;border-radius:4px;box-shadow:0 0 20px rgba(0,255,65,.3);z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--green)}
+.blink{animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.inline-form{background:var(--bg3);border:1px dashed var(--border);border-radius:4px;padding:1rem;margin-top:1rem;display:none}
+.inline-form.open{display:block}
+.empty-state{text-align:center;padding:2.5rem 1rem;font-family:var(--font-mono);font-size:.7rem;color:var(--text-dim)}
+.empty-state .icon{font-size:1.8rem;margin-bottom:.5rem}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">JOURNAL</div>
+    <div class="login-sub">JURNAL KEBIASAAN HARIAN</div>
+    <div class="login-tabs">
+      <button class="login-tab active" onclick="switchLoginTab('masuk')">MASUK</button>
+      <button class="login-tab" onclick="switchLoginTab('daftar')">DAFTAR AKUN</button>
+    </div>
+
+    <div class="login-panel active" id="lp-masuk">
+      <div class="lf"><label>USERNAME</label><input type="text" id="li-u" placeholder="username..." autocomplete="username"/></div>
+      <div class="lf"><label>PASSWORD</label><input type="password" id="li-p" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="login-btn" onclick="doLogin()">▸ MASUK</button>
+      <div class="login-err" id="li-err"></div>
+    </div>
+
+    <div class="login-panel" id="lp-daftar">
+      <div class="lf"><label>USERNAME</label><input type="text" id="re-u" placeholder="buat username (huruf/angka/_)" autocomplete="username"/></div>
+      <div class="lf"><label>NAMA TAMPILAN</label><input type="text" id="re-dn" placeholder="nama kamu..."/></div>
+      <div class="lf"><label>PASSWORD</label><input type="password" id="re-p" placeholder="min. 4 karakter" autocomplete="new-password"/></div>
+      <div class="lf"><label>KONFIRMASI PASSWORD</label><input type="password" id="re-p2" placeholder="ulangi password"/></div>
+      <button class="login-btn" onclick="doRegister()">▸ BUAT AKUN</button>
+      <div class="login-err" id="re-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════ -->
+<div id="app" style="display:none">
+
+<header>
+  <div class="logo">DAILY JOURNAL<span>JOURNAL FOR GOOD HABITS</span></div>
+  <div class="header-right">
+    <div class="header-date">
+      <strong id="hdr-date">—</strong>
+      <span id="hdr-time" class="blink">—</span>
+    </div>
+    <div class="user-badge">◈ <span class="un" id="hdr-un">—</span>
+      <button class="logout-btn" onclick="doLogout()">KELUAR</button>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="tab-btn active" data-tab="dashboard">▣ DASHBOARD</button>
+  <button class="tab-btn" data-tab="hari-ini">◈ TODAY</button>
+  <button class="tab-btn" data-tab="kebiasaan">◆ HABITS</button>
+  <button class="tab-btn" data-tab="jurnal">◇ JOURNAL</button>
+  <button class="tab-btn" data-tab="grafik">▲ STATISTIK</button>
+  <button class="tab-btn" data-tab="tahunan">◉ YEARLY</button>
+  <button class="tab-btn" data-tab="pengaturan">⚙ SETTING</button>
+</nav>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-panel active">
+    <div class="grid-4" style="margin-bottom:1.2rem">
+      <div class="stat-box"><div class="stat-num" id="st-streak">0</div><div class="stat-label">🔥 ACTIVED STREAK</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-today">0%</div><div class="stat-label">⚡ FINISHED TODAY</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-week">0%</div><div class="stat-label">📅 TODAY'S AVERAGE</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label">✓ AMOUNT HABITS</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">▸ TODAY HABITS</div>
+        <div id="dash-habits" class="habit-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">▸ THIS WEEK'S PROGRESSI</div>
+        <div class="chart-wrap"><canvas id="chart-week-dash"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">▸LAST 30 DAYS ACTIVITY</div>
+      <div class="chart-wrap"><canvas id="chart-30days"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HARI INI -->
+  <div id="tab-hari-ini" class="tab-panel">
+    <div class="date-nav-wrap">
+      <div class="date-nav-header">
+        <span class="week-range-label" id="week-range-label">—</span>
+        <button class="btn btn-ghost btn-sm" onclick="goToToday()">↩ Hari Ini</button>
+      </div>
+      <div class="week-nav-row">
+        <button class="nav-arrow" onclick="shiftWeek(-1)" title="Minggu sebelumnya">◀</button>
+        <div class="week-days" id="week-nav"></div>
+        <button class="nav-arrow" id="btn-next-week" onclick="shiftWeek(1)" title="Minggu berikutnya">▶</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">▸ TODAY — <span id="selected-date-label">HABITS</span></div>
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-family:var(--font-mono);font-size:.58rem;color:var(--text-dim)">KEMAJUAN</span>
+              <span style="font-family:var(--font-mono);font-size:.58rem;color:var(--green)" id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div id="today-habits" class="habit-list"></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">▸ CATATAN — <span id="note-date-label" style="font-size:.55rem;color:var(--text-dim)"></span></div>
+          <div class="form-row" style="margin-bottom:.5rem">
+            <label>MOOD:</label>
+            <div class="mood-selector" id="mood-selector">
+              <div class="mood-opt" data-mood="😄">😄</div>
+              <div class="mood-opt" data-mood="🙂">🙂</div>
+              <div class="mood-opt" data-mood="😐">😐</div>
+              <div class="mood-opt" data-mood="😔">😔</div>
+              <div class="mood-opt" data-mood="😤">😤</div>
+              <div class="mood-opt" data-mood="😴">😴</div>
+            </div>
+          </div>
+          <textarea id="daily-note" placeholder="Tulis catatan harian kamu di sini..." style="margin-top:.7rem;min-height:100px"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:.7rem">
+            <button class="btn" onclick="saveDailyNote()">SIMPAN CATATAN</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">▸ RINGKASAN HARI SEBELUMNYA</div>
+          <div id="yesterday-summary" style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);line-height:2">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEBIASAAN -->
+  <div id="tab-kebiasaan" class="tab-panel">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-title">▸ LIST OF HABITS</div>
+          <div id="habit-master-list" class="habit-list"></div>
+          <button class="btn" style="margin-top:1rem;width:100%" onclick="toggleAddHabit()">+ TAMBAH KEBIASAAN</button>
+          <div class="inline-form" id="add-habit-form">
+            <div class="card-title" style="margin-bottom:.8rem">NEW HABIT</div>
+            <div class="form-row"><label>NAMA:</label><input type="text" id="new-habit-name" placeholder="Nama kebiasaan..."/></div>
+            <div class="form-row"><label>KATEGORI:</label>
+              <select id="new-habit-cat">
+                <option value="health">💪 Kesehatan</option>
+                <option value="kerja">💼 Pekerjaan</option>
+                <option value="belajar">📚 Belajar</option>
+                <option value="pribadi">🌱 Pribadi</option>
+                <option value="keuangan">💰 Keuangan</option>
+              </select>
+            </div>
+            <div class="form-row"><label>TARGET:</label><input type="text" id="new-habit-target" placeholder="contoh: 30 menit..."/></div>
+            <div style="display:flex;gap:.5rem;margin-top:.5rem">
+              <button class="btn" style="flex:1" onclick="addHabit()">SIMPAN</button>
+              <button class="btn btn-danger btn-sm" onclick="toggleAddHabit()">BATAL</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">▸ HABITS STATISTIK (30 DAY)</div>
+          <div id="habit-stats-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JURNAL -->
+  <div id="tab-jurnal" class="tab-panel">
+
+    <!-- Date picker jurnal -->
+    <div class="date-nav-wrap" style="margin-bottom:1.2rem">
+      <div class="date-nav-header">
+        <span class="week-range-label" id="j-week-range-label">—</span>
+        <button class="btn btn-ghost btn-sm" onclick="goToTodayJurnal()">↩ Hari Ini</button>
+      </div>
+      <div class="week-nav-row">
+        <button class="nav-arrow" onclick="shiftJurnalWeek(-1)">◀</button>
+        <div class="week-days" id="j-week-nav"></div>
+        <button class="nav-arrow" id="j-btn-next-week" onclick="shiftJurnalWeek(1)">▶</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <!-- status badge: sudah ada / kosong -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+            <div class="card-title" style="margin-bottom:0">◇ JURNAL — <span id="j-date-label" style="font-size:.55rem;color:var(--text-dim)">—</span></div>
+            <span id="j-status-badge" style="font-family:var(--font-mono);font-size:.55rem;padding:2px 8px;border-radius:20px;border:1px solid"></span>
+          </div>
+          <div class="form-row"><label>JUDUL:</label><input type="text" id="journal-title" placeholder="Judul jurnal hari ini..."/></div>
+          <div class="form-row" style="margin-top:.5rem">
+            <label>MOOD:</label>
+            <div class="mood-selector" id="journal-mood-selector">
+              <div class="mood-opt" data-mood="😄">😄</div>
+              <div class="mood-opt" data-mood="🙂">🙂</div>
+              <div class="mood-opt" data-mood="😐">😐</div>
+              <div class="mood-opt" data-mood="😔">😔</div>
+              <div class="mood-opt" data-mood="😤">😤</div>
+              <div class="mood-opt" data-mood="😴">😴</div>
+            </div>
+          </div>
+          <textarea id="journal-content" placeholder="Apa yang terjadi hari ini? Apa yang kamu pelajari? Apa yang kamu syukuri?" style="min-height:220px;margin-top:.7rem"></textarea>
+          <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:.7rem">
+            <button class="btn btn-danger btn-sm" id="j-delete-btn" onclick="deleteJournalEntry()" style="display:none">HAPUS</button>
+            <button class="btn" onclick="saveJournalEntry()">SIMPAN JURNAL</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">▸ SEMUA ENTRI JURNAL</div>
+          <div id="journal-entries-list" style="max-height:600px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAFIK -->
+  <div id="tab-grafik" class="tab-panel">
+    <div class="grid-2">
+      <div class="card"><div class="card-title">▸ PROGRESS MINGGUAN</div><div class="chart-wrap chart-wrap-tall"><canvas id="chart-weekly"></canvas></div></div>
+      <div class="card"><div class="card-title">▸ PROGRESS BULANAN</div><div class="chart-wrap chart-wrap-tall"><canvas id="chart-monthly"></canvas></div></div>
+    </div>
+    <div class="card"><div class="card-title">▸ PERBANDINGAN KEBIASAAN (BULAN INI)</div><div class="chart-wrap"><canvas id="chart-habits-compare"></canvas></div></div>
+    <div class="card"><div class="card-title">▸ TREN MOOD (14 HARI)</div><div class="chart-wrap"><canvas id="chart-mood"></canvas></div></div>
+  </div>
+
+  <!-- TAHUNAN -->
+  <div id="tab-tahunan" class="tab-panel">
+    <div class="card">
+      <div class="card-title">▸ HEATMAP KONSISTENSI <span id="heatmap-year-label">2025</span></div>
+      <div class="heatmap-months" id="heatmap-months-label"></div>
+      <div class="heatmap-grid" id="heatmap-grid"></div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:.7rem;font-family:var(--font-mono);font-size:.58rem;color:var(--text-dim)">
+        Kurang
+        <div style="width:11px;height:11px;background:var(--bg3);border:1px solid var(--border);border-radius:2px"></div>
+        <div style="width:11px;height:11px;background:rgba(0,200,50,.2);border-radius:2px"></div>
+        <div style="width:11px;height:11px;background:rgba(0,200,50,.45);border-radius:2px"></div>
+        <div style="width:11px;height:11px;background:rgba(0,200,50,.7);border-radius:2px"></div>
+        <div style="width:11px;height:11px;background:var(--green);border-radius:2px"></div>
+        Banyak
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">▸ BULANAN TAHUN INI</div><div class="chart-wrap chart-wrap-tall"><canvas id="chart-yearly"></canvas></div></div>
+      <div class="card"><div class="card-title">▸ STATISTIK TAHUN INI</div><div id="yearly-stats"></div></div>
+    </div>
+  </div>
+
+  <!-- PENGATURAN -->
+  <div id="tab-pengaturan" class="tab-panel">
+    <div class="grid-2">
+
+      <div>
+        <div class="card">
+          <div class="card-title">⚙ PROFIL AKUN</div>
+          <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);margin-bottom:1.2rem;line-height:2.3">
+            USERNAME &nbsp;: <span style="color:var(--green)" id="set-username">—</span><br>
+            NAMA &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span style="color:var(--green)" id="set-displayname">—</span><br>
+            TERDAFTAR : <span style="color:var(--text)" id="set-created">—</span>
+          </div>
+          <div class="card-title" style="margin-bottom:.7rem">GANTI NAMA TAMPILAN</div>
+          <div style="display:flex;gap:.6rem">
+            <input type="text" id="set-new-dn" placeholder="Nama tampilan baru..." style="flex:1"/>
+            <button class="btn" onclick="changeDisplayName()">SIMPAN</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔑 GANTI PASSWORD</div>
+          <div class="lf"><label>PASSWORD LAMA</label><input type="password" id="set-old-pw" placeholder="••••••••"/></div>
+          <div class="lf"><label>PASSWORD BARU</label><input type="password" id="set-new-pw" placeholder="min. 4 karakter"/></div>
+          <div class="lf"><label>KONFIRMASI PASSWORD BARU</label><input type="password" id="set-new-pw2" placeholder="ulangi password baru"/></div>
+          <button class="btn" onclick="changePassword()">SIMPAN PASSWORD</button>
+          <div id="set-pw-err" style="font-family:var(--font-mono);font-size:.65rem;color:var(--red);margin-top:.5rem;min-height:1.1em"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">📊 RINGKASAN DATA KAMU</div>
+          <div id="set-data-summary" style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);line-height:2.4">—</div>
+        </div>
+
+        <div class="card" style="border-color:rgba(255,34,68,.3)">
+          <div class="card-title" style="color:var(--red);text-shadow:0 0 8px rgba(255,34,68,.4)">⚠ ZONA BERBAHAYA</div>
+
+          <div style="margin-bottom:1.3rem;padding-bottom:1.3rem;border-bottom:1px solid rgba(255,34,68,.12)">
+            <div style="font-size:.95rem;font-weight:600;margin-bottom:.3rem">Hapus Semua Data</div>
+            <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.7rem;line-height:1.7">
+              Menghapus seluruh kebiasaan, log harian, catatan, dan jurnal.<br>Akun tetap ada — kamu mulai dari nol.
+            </div>
+            <button class="btn btn-danger" onclick="openConfirm('data')">🗑 HAPUS SEMUA DATA</button>
+          </div>
+
+          <div>
+            <div style="font-size:.95rem;font-weight:600;margin-bottom:.3rem">Hapus Akun Permanen</div>
+            <div style="font-family:var(--font-mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.7rem;line-height:1.7">
+              Menghapus akun + seluruh data secara permanen.<br>
+              <span style="color:var(--red)">⚠ Tindakan ini tidak bisa dibatalkan.</span>
+            </div>
+            <button class="btn btn-danger" onclick="openConfirm('akun')">💀 HAPUS AKUN PERMANEN</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- MODAL KONFIRMASI -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:460px;border-color:rgba(255,34,68,.5);box-shadow:0 0 60px rgba(255,34,68,.15)">
+    <div class="modal-title" style="color:var(--red);text-shadow:0 0 10px rgba(255,34,68,.4)" id="confirm-title">KONFIRMASI</div>
+    <div style="font-family:var(--font-mono);font-size:.68rem;color:var(--text-dim);line-height:1.9;margin-bottom:1.2rem" id="confirm-desc">—</div>
+    <div class="lf">
+      <label id="confirm-input-label">KETIK USERNAME UNTUK KONFIRMASI</label>
+      <input type="text" id="confirm-input" placeholder="username kamu..." autocomplete="off"/>
+    </div>
+    <div id="confirm-err" style="font-family:var(--font-mono);font-size:.65rem;color:var(--red);margin-bottom:.8rem;min-height:1em"></div>
+    <div style="display:flex;gap:.7rem">
+      <button class="btn btn-danger" style="flex:1" onclick="doConfirmAction()">✓ YA, HAPUS SEKARANG</button>
+      <button class="btn btn-ghost" onclick="closeModal('confirm-modal')">BATAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL JOURNAL -->
+<div class="modal-overlay" id="journal-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('journal-modal')">✕</button>
+    <div class="modal-title" id="modal-j-title">JURNAL</div>
+    <div style="font-family:var(--font-mono);font-size:.62rem;color:var(--text-dim);margin-bottom:1rem" id="modal-j-date"></div>
+    <div id="modal-j-body" style="line-height:1.75;font-size:.92rem;white-space:pre-wrap;max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH ─────────────────────────────────────
+const USERS_KEY='k_users_v3';
+const SESS_KEY='k_sess_v3';
+function getUsers(){return JSON.parse(localStorage.getItem(USERS_KEY)||'{}')}
+function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u))}
+function getSession(){return localStorage.getItem(SESS_KEY)||''}
+function setSession(u){localStorage.setItem(SESS_KEY,u)}
+function clearSession(){localStorage.removeItem(SESS_KEY)}
+
+let CU=''; // current user
+function pfx(k){return `ku_${CU}_${k}`}
+
+function switchLoginTab(tab){
+  document.querySelectorAll('.login-tab').forEach((t,i)=>t.classList.toggle('active',['masuk','daftar'][i]===tab));
+  document.getElementById('lp-masuk').classList.toggle('active',tab==='masuk');
+  document.getElementById('lp-daftar').classList.toggle('active',tab==='daftar');
+  document.getElementById('li-err').textContent='';
+  document.getElementById('re-err').textContent='';
+}
+
+function doLogin(){
+  const u=document.getElementById('li-u').value.trim().toLowerCase();
+  const p=document.getElementById('li-p').value;
+  const err=document.getElementById('li-err');
+  if(!u||!p){err.textContent='Username dan password wajib diisi';return;}
+  const users=getUsers();
+  if(!users[u]){err.textContent='Username tidak ditemukan';return;}
+  if(users[u].password!==btoa(unescape(encodeURIComponent(p)))){err.textContent='Password salah';return;}
+  setSession(u); initApp(u);
+}
+
+function doRegister(){
+  const u=document.getElementById('re-u').value.trim().toLowerCase();
+  const dn=document.getElementById('re-dn').value.trim();
+  const p=document.getElementById('re-p').value;
+  const p2=document.getElementById('re-p2').value;
+  const err=document.getElementById('re-err');
+  if(!u||!dn||!p){err.textContent='Semua field wajib diisi';return;}
+  if(!/^[a-z0-9_]{3,20}$/.test(u)){err.textContent='Username: 3–20 karakter (huruf/angka/underscore)';return;}
+  if(p.length<4){err.textContent='Password minimal 4 karakter';return;}
+  if(p!==p2){err.textContent='Konfirmasi password tidak cocok';return;}
+  const users=getUsers();
+  if(users[u]){err.textContent='Username sudah digunakan';return;}
+  users[u]={password:btoa(unescape(encodeURIComponent(p))),displayName:dn,createdAt:new Date().toISOString()};
+  saveUsers(users);
+  setSession(u); initApp(u);
+  showToast('Akun berhasil dibuat! Selamat datang 🌱');
+}
+
+function doLogout(){
+  clearSession(); CU='';
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('li-p').value='';
+  document.getElementById('li-err').textContent='';
+}
+
+function initApp(username){
+  CU=username;
+  const dn=getUsers()[username]?.displayName||username;
+  document.getElementById('hdr-un').textContent=dn;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').style.display='block';
+  seedData();
+  selectedDate=today();
+  weekOffset=0;
+  initJurnal();
+  renderDashboard();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  if(document.getElementById('login-screen').classList.contains('hidden')) return;
+  if(document.getElementById('lp-masuk').classList.contains('active')) doLogin();
+  else doRegister();
+});
+
+// ── DATA ─────────────────────────────────────
+const DB={
+  get habits(){return JSON.parse(localStorage.getItem(pfx('habits'))||'[]')},
+  set habits(v){localStorage.setItem(pfx('habits'),JSON.stringify(v))},
+  get logs(){return JSON.parse(localStorage.getItem(pfx('logs'))||'{}')},
+  set logs(v){localStorage.setItem(pfx('logs'),JSON.stringify(v))},
+  get notes(){return JSON.parse(localStorage.getItem(pfx('notes'))||'{}')},
+  set notes(v){localStorage.setItem(pfx('notes'),JSON.stringify(v))},
+  get journal(){return JSON.parse(localStorage.getItem(pfx('journal'))||'[]')},
+  set journal(v){localStorage.setItem(pfx('journal'),JSON.stringify(v))},
+};
+
+function seedData(){
+  if(DB.habits.length>0) return;
+  DB.habits=[
+    {id:1,name:'Olahraga pagi',cat:'health',target:'30 menit',createdAt:today()},
+  ];
+  const logs={};
+  for(let i=0;i<90;i++){
+    const d=dateOffset(-i); logs[d]={};
+    DB.habits.forEach(h=>{logs[d][h.id]=Math.random()>(i<14?.3:.5);});
+  }
+  DB.logs=logs;
+}
+
+// ── DATE UTILS (WIB) ─────────────────────────
+function nowJKT(){
+  const now=new Date();
+  return new Date(now.getTime()+now.getTimezoneOffset()*60000+7*3600000);
+}
+function today(){return fmt(nowJKT())}
+function fmt(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function dateOffset(days){
+  const d=nowJKT(); d.setDate(d.getDate()+days); return fmt(d);
+}
+function parseDate(s){return new Date(s+'T00:00:00')}
+function displayDate(s){return parseDate(s).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function shortDate(s){return parseDate(s).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+
+let selectedDate='';
+let weekOffset=0; // 0=minggu ini, -1=minggu lalu, -2=dua minggu lalu, dst
+
+// ── CLOCK ────────────────────────────────────
+function updateClock(){
+  const n=nowJKT();
+  const hh=String(n.getHours()).padStart(2,'0');
+  const mm=String(n.getMinutes()).padStart(2,'0');
+  const ss=String(n.getSeconds()).padStart(2,'0');
+  const el1=document.getElementById('hdr-time');
+  const el2=document.getElementById('hdr-date');
+  if(el1) el1.textContent=`${hh}:${mm}:${ss} WIB`;
+  if(el2) el2.textContent=n.toLocaleDateString('en-EN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── TABS ─────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    refreshTab(btn.dataset.tab);
+  });
+});
+function refreshTab(tab){
+  if(tab==='dashboard') renderDashboard();
+  if(tab==='hari-ini')  renderHariIni();
+  if(tab==='kebiasaan') renderKebiasaan();
+  if(tab==='jurnal')    { if(!journalDate) initJurnal(); renderJurnal(); }
+  if(tab==='grafik')    renderGrafik();
+  if(tab==='tahunan')   renderTahunan();
+  if(tab==='pengaturan') renderPengaturan();
+}
+
+// ── TOAST ────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent='> '+msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── LOG HELPERS ──────────────────────────────
+function getLog(date){return DB.logs[date]||{}}
+function setLog(date,hId,val){
+  const l=DB.logs; if(!l[date]) l[date]={};
+  l[date][hId]=val; DB.logs=l;
+}
+function dayPct(date){
+  const h=DB.habits; if(!h.length) return 0;
+  return Math.round(h.filter(x=>getLog(date)[x.id]).length/h.length*100);
+}
+function calcStreak(){
+  let cur=0;
+  for(let i=0;i<365;i++){if(dayPct(dateOffset(-i))>=50) cur++; else break;}
+  return cur;
+}
+function calcHabitStreak(hId,fromDate){
+  let s=0;
+  for(let i=0;i<365;i++){
+    const d=dateOffset(-i);
+    if(d>fromDate) continue;
+    if(getLog(d)[hId]) s++; else break;
+  }
+  return s;
+}
+
+// ── DASHBOARD ────────────────────────────────
+let cwDash,c30;
+function renderDashboard(){
+  if(!CU) return;
+  const h=DB.habits, tl=getLog(today());
+  const pct=h.length?Math.round(h.filter(x=>tl[x.id]).length/h.length*100):0;
+  let ws=0; for(let i=0;i<7;i++) ws+=dayPct(dateOffset(-i));
+  document.getElementById('st-streak').textContent=calcStreak();
+  document.getElementById('st-today').textContent=pct+'%';
+  document.getElementById('st-week').textContent=Math.round(ws/7)+'%';
+  document.getElementById('st-total').textContent=h.length;
+
+  const el=document.getElementById('dash-habits');
+  if(!h.length){el.innerHTML='<div class="empty-state"><div class="icon">◆</div>no habit yet, added habit now in tab habits</div>';return;}
+  el.innerHTML=h.slice(0,6).map(x=>{
+    const done=!!tl[x.id];
+    return `<div class="habit-item ${done?'done':''}">
+      <div class="habit-check" onclick="toggleHabit('${today()}',${x.id})">${done?'✓':''}</div>
+      <div class="habit-name">${x.name}</div>
+      <div class="habit-category cat-${x.cat}">${x.cat}</div>
+    </div>`;
+  }).join('');
+
+  const wL=[],wD=[];
+  for(let i=6;i>=0;i--){const d=dateOffset(-i);wL.push(parseDate(d).toLocaleDateString('id-ID',{weekday:'short'}));wD.push(dayPct(d));}
+  if(cwDash) cwDash.destroy(); cwDash=makeBarChart('chart-week-dash',wL,wD,'%');
+
+  const l30=[],d30=[];
+  for(let i=29;i>=0;i--){const d=dateOffset(-i);l30.push(shortDate(d));d30.push(dayPct(d));}
+  if(c30) c30.destroy(); c30=makeLineChart('chart-30days',l30,d30,'30 Hari');
+}
+
+// ── WEEK NAVIGATION ──────────────────────────
+// weekOffset 0 = 7 hari ini hingga hari ini
+// weekOffset -1 = 7 hari sebelumnya, dst.
+function getWeekDates(offset){
+  // offset=0  → hari-6 s/d hari-0 (hari ini)
+  // offset=-1 → hari-13 s/d hari-7
+  const base = offset * 7; // selalu 0 atau negatif
+  const dates=[];
+  for(let i=6;i>=0;i--) dates.push(dateOffset(base - i));
+  return dates;
+}
+
+function shiftWeek(delta){
+  const newOff=weekOffset+delta;
+  if(newOff>0) return;
+  weekOffset=newOff;
+  const todayStr=today();
+  const wd=getWeekDates(weekOffset);
+  if(!wd.includes(selectedDate)){
+    const valid=wd.filter(d=>d<=todayStr);
+    selectedDate=valid.length?valid[valid.length-1]:wd[0];
+  }
+  renderHariIni();
+}
+
+function goToToday(){
+  weekOffset=0; selectedDate=today(); renderHariIni();
+}
+
+function renderHariIni(){
+  if(!CU) return;
+  renderWeekNav();
+  renderTodayHabits();
+  renderYesterdaySummary();
+  loadDailyNote();
+}
+
+function renderWeekNav(){
+  const el=document.getElementById('week-nav');
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const todayStr=today();
+  const wd=getWeekDates(weekOffset);
+  el.innerHTML='';
+  wd.forEach(d=>{
+    const dt=parseDate(d);
+    const isTd=d===todayStr, isSel=d===selectedDate, isFut=d>todayStr;
+    const pct=dayPct(d);
+    const div=document.createElement('div');
+    div.className='week-day-cell'+(isTd?' today':'')+(isSel?' selected':'')+(isFut?' future':'');
+    div.innerHTML=`<div class="wdn">${days[dt.getDay()]}</div>
+      <div class="wdnum">${dt.getDate()}</div>
+      <div class="wdpct">${isFut?'—':pct+'%'}</div>`;
+    if(!isFut) div.onclick=()=>{selectedDate=d;renderHariIni();};
+    el.appendChild(div);
+  });
+  // tombol next hanya aktif jika offset < 0
+  const btnNx=document.getElementById('btn-next-week');
+  btnNx.disabled=weekOffset>=0;
+  // range label
+  document.getElementById('week-range-label').textContent=
+    `${shortDate(wd[0])} — ${shortDate(wd[6])}`;
+}
+
+function renderTodayHabits(){
+  const h=DB.habits, log=getLog(selectedDate);
+  const done=h.filter(x=>log[x.id]).length;
+  const pct=h.length?Math.round(done/h.length*100):0;
+  const isFut=selectedDate>today();
+  document.getElementById('selected-date-label').textContent=
+    selectedDate===today()?'HABITS':shortDate(selectedDate).toUpperCase();
+  document.getElementById('note-date-label').textContent=shortDate(selectedDate);
+  document.getElementById('progress-pct').textContent=pct+'%';
+  document.getElementById('progress-fill').style.width=pct+'%';
+
+  const el=document.getElementById('today-habits');
+  if(!h.length){el.innerHTML='<div class="empty-state"><div class="icon">◆</div>no habit yet, added in tab habits.</div>';return;}
+  el.innerHTML=h.map(x=>{
+    const isDone=!!log[x.id];
+    const streak=calcHabitStreak(x.id,selectedDate);
+    return `<div class="habit-item ${isDone?'done':''}">
+      <div class="habit-check" ${!isFut?`onclick="toggleHabit('${selectedDate}',${x.id})"`:' style="opacity:.35;cursor:not-allowed"'}>${isDone?'✓':''}</div>
+      <div style="flex:1">
+        <div class="habit-name">${x.name}</div>
+        ${x.target?`<div style="font-family:var(--font-mono);font-size:.52rem;color:var(--text-dim)">${x.target}</div>`:''}
+      </div>
+      <div class="habit-streak">🔥 <span>${streak}</span></div>
+      <div class="habit-category cat-${x.cat}">${x.cat}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderYesterdaySummary(){
+  const prev=new Date(selectedDate+'T00:00:00'); prev.setDate(prev.getDate()-1);
+  const yday=fmt(prev);
+  const pct=dayPct(yday), note=DB.notes[yday], h=DB.habits;
+  const done=h.filter(x=>getLog(yday)[x.id]).length;
+  document.getElementById('yesterday-summary').innerHTML=
+    `<span style="color:var(--green)">📅 ${shortDate(yday)}</span><br>
+     Konsistensi: <span style="color:var(--green)">${pct}%</span> (${done}/${h.length})<br>
+     ${note?`Mood: ${note.mood||'—'} | "${note.text?.slice(0,55)||''}..."`:'Tidak ada catatan'}`;
+}
+
+function loadDailyNote(){
+  const n=DB.notes[selectedDate];
+  document.getElementById('daily-note').value=n?.text||'';
+  document.querySelectorAll('#mood-selector .mood-opt').forEach(m=>
+    m.classList.toggle('selected',m.dataset.mood===(n?.mood||'')));
+}
+
+document.querySelectorAll('#mood-selector .mood-opt,#journal-mood-selector .mood-opt').forEach(opt=>{
+  opt.addEventListener('click',()=>{
+    const p=opt.closest('.mood-selector');
+    p.querySelectorAll('.mood-opt').forEach(o=>o.classList.remove('selected'));
+    opt.classList.add('selected');
+  });
+});
+
+function saveDailyNote(){
+  const text=document.getElementById('daily-note').value;
+  const mood=document.querySelector('#mood-selector .mood-opt.selected')?.dataset.mood||'';
+  const n=DB.notes; n[selectedDate]={text,mood}; DB.notes=n;
+  showToast('Catatan disimpan ✓');
+}
+
+function toggleHabit(date,hId){
+  const l=getLog(date), nowDone=!l[hId];
+  setLog(date,hId,nowDone);
+  renderTodayHabits(); renderDashboard();
+  showToast(nowDone?'Kebiasaan selesai! 💚':'Ditandai belum selesai');
+}
+
+// ── KEBIASAAN ────────────────────────────────
+function renderKebiasaan(){
+  if(!CU) return;
+  const h=DB.habits, el=document.getElementById('habit-master-list');
+  if(!h.length){el.innerHTML='<div class="empty-state"><div class="icon">◆</div>no habit yet, added habit now</div>';}
+  else el.innerHTML=h.map(x=>{
+    const streak=calcHabitStreak(x.id,today());
+    const t30=Array.from({length:30},(_,i)=>getLog(dateOffset(-i))[x.id]?1:0).reduce((a,b)=>a+b,0);
+    return `<div class="habit-item">
+      <div style="flex:1">
+        <div class="habit-name">${x.name}</div>
+        <div style="display:flex;gap:.4rem;margin-top:3px;align-items:center">
+          <div class="habit-category cat-${x.cat}">${x.cat}</div>
+          ${x.target?`<span style="font-family:var(--font-mono);font-size:.52rem;color:var(--text-dim)">${x.target}</span>`:''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="habit-streak">🔥 <span>${streak}</span> hari</div>
+        <div style="font-family:var(--font-mono);font-size:.52rem;color:var(--text-dim)">30hr: ${t30}x</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteHabit(${x.id})">✕</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('habit-stats-list').innerHTML=h.map(x=>{
+    const p=Math.round(Array.from({length:30},(_,i)=>getLog(dateOffset(-i))[x.id]?1:0).reduce((a,b)=>a+b,0)/30*100);
+    return `<div style="margin-bottom:.9rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:.88rem">${x.name}</span>
+        <span style="font-family:var(--font-mono);font-size:.65rem;color:var(--green)">${p}%</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${p}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAddHabit(){document.getElementById('add-habit-form').classList.toggle('open')}
+
+function addHabit(){
+  const name=document.getElementById('new-habit-name').value.trim();
+  if(!name){showToast('Nama tidak boleh kosong!');return;}
+  const h=DB.habits;
+  h.push({id:Date.now(),name,cat:document.getElementById('new-habit-cat').value,target:document.getElementById('new-habit-target').value,createdAt:today()});
+  DB.habits=h;
+  document.getElementById('new-habit-name').value='';
+  document.getElementById('new-habit-target').value='';
+  toggleAddHabit(); renderKebiasaan();
+  showToast('Added Habits ✓');
+}
+
+function deleteHabit(id){
+  DB.habits=DB.habits.filter(x=>x.id!==id);
+  renderKebiasaan(); showToast('Habits Are removed');
+}
+
+// ── JURNAL ───────────────────────────────────
+// DB.journal sekarang object keyed by date: { "2025-03-14": {title,content,mood,updatedAt} }
+// Migrasi otomatis dari format lama (array) ke baru (object)
+function migrateJournal(){
+  const raw=localStorage.getItem(pfx('journal'));
+  if(!raw) return;
+  const parsed=JSON.parse(raw);
+  if(Array.isArray(parsed)){
+    // format lama → konversi ke object
+    const obj={};
+    parsed.forEach(e=>{ if(e.date) obj[e.date]={title:e.title||'',content:e.content||'',mood:e.mood||'',updatedAt:e.createdAt||new Date().toISOString()}; });
+    localStorage.setItem(pfx('journal'),JSON.stringify(obj));
+  }
+}
+
+// Override DB.journal getter/setter untuk object
+Object.defineProperty(DB,'journal',{
+  get(){return JSON.parse(localStorage.getItem(pfx('journal'))||'{}')},
+  set(v){localStorage.setItem(pfx('journal'),JSON.stringify(v))},
+  configurable:true
+});
+
+let journalDate='';
+let journalWeekOffset=0;
+
+function initJurnal(){
+  migrateJournal();
+  journalDate=today();
+  journalWeekOffset=0;
+}
+
+function renderJurnal(){
+  if(!CU) return;
+  renderJurnalWeekNav();
+  loadJournalForDate();
+  renderJournalList();
+}
+
+function renderJurnalWeekNav(){
+  const el=document.getElementById('j-week-nav');
+  const days=['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  const todayStr=today();
+  const wd=getWeekDates(journalWeekOffset);
+  el.innerHTML='';
+  wd.forEach(d=>{
+    const dt=parseDate(d);
+    const isTd=d===todayStr, isSel=d===journalDate, isFut=d>todayStr;
+    const hasEntry=!!DB.journal[d];
+    const div=document.createElement('div');
+    div.className='week-day-cell'+(isTd?' today':'')+(isSel?' selected':'')+(isFut?' future':'');
+    div.innerHTML=`<div class="wdn">${days[dt.getDay()]}</div>
+      <div class="wdnum">${dt.getDate()}</div>
+      <div class="wdpct">${isFut?'—':hasEntry?'<span style="color:var(--green)">✓</span>':'—'}</div>`;
+    if(!isFut) div.onclick=()=>{journalDate=d; renderJurnal();};
+    el.appendChild(div);
+  });
+  const btnNx=document.getElementById('j-btn-next-week');
+  btnNx.disabled=journalWeekOffset>=0;
+  document.getElementById('j-week-range-label').textContent=
+    `${shortDate(wd[0])} — ${shortDate(wd[6])}`;
+}
+
+function loadJournalForDate(){
+  const entry=DB.journal[journalDate];
+  const isFuture=journalDate>today();
+
+  // label tanggal
+  document.getElementById('j-date-label').textContent=
+    journalDate===today()?'HARI INI — '+shortDate(journalDate):shortDate(journalDate).toUpperCase();
+
+  // badge status
+  const badge=document.getElementById('j-status-badge');
+  const delBtn=document.getElementById('j-delete-btn');
+  if(isFuture){
+    badge.textContent='BELUM WAKTUNYA'; badge.style.color='var(--text-dim)'; badge.style.borderColor='var(--border)';
+    delBtn.style.display='none';
+  } else if(entry){
+    badge.textContent='SUDAH DITULIS ✓'; badge.style.color='var(--green)'; badge.style.borderColor='var(--green)';
+    delBtn.style.display='inline-block';
+  } else {
+    badge.textContent='BELUM ADA JURNAL'; badge.style.color='var(--text-dim)'; badge.style.borderColor='var(--border)';
+    delBtn.style.display='none';
+  }
+
+  // isi form
+  document.getElementById('journal-title').value=entry?.title||'';
+  document.getElementById('journal-content').value=entry?.content||'';
+  document.querySelectorAll('#journal-mood-selector .mood-opt').forEach(m=>
+    m.classList.toggle('selected',m.dataset.mood===(entry?.mood||'')));
+
+  // disable form jika masa depan
+  ['journal-title','journal-content'].forEach(id=>{
+    document.getElementById(id).disabled=isFuture;
+    document.getElementById(id).style.opacity=isFuture?'.4':'1';
+  });
+}
+
+function renderJournalList(){
+  const j=DB.journal;
+  const entries=Object.entries(j).sort((a,b)=>b[0].localeCompare(a[0])); // terbaru dulu
+  const el=document.getElementById('journal-entries-list');
+  if(!entries.length){el.innerHTML='<div class="empty-state"><div class="icon">◇</div>no journal yet.</div>';return;}
+  el.innerHTML=entries.map(([date,e])=>`
+    <div class="journal-entry ${date===journalDate?'selected-journal':''}" onclick="selectJournalDate('${date}')">
+      <div class="journal-entry-date">${displayDate(date)} ${e.mood||''}</div>
+      <div style="font-weight:600;margin-bottom:.25rem">${e.title||'Tanpa Judul'}</div>
+      <div class="journal-entry-preview">${e.content}</div>
+    </div>
+  `).join('');
+}
+
+function selectJournalDate(date){
+  // cari week offset yang berisi tanggal ini
+  const todayStr=today();
+  let found=false;
+  for(let off=0;off>=-52;off--){
+    const wd=getWeekDates(off);
+    if(wd.includes(date)){journalWeekOffset=off;found=true;break;}
+  }
+  journalDate=date;
+  renderJurnal();
+}
+
+function saveJournalEntry(){
+  if(journalDate>today()){showToast('Tidak bisa menulis jurnal untuk masa depan!');return;}
+  const content=document.getElementById('journal-content').value.trim();
+  if(!content){showToast('Isi jurnal tidak boleh kosong!');return;}
+  const j=DB.journal;
+  j[journalDate]={
+    title:document.getElementById('journal-title').value.trim(),
+    content,
+    mood:document.querySelector('#journal-mood-selector .mood-opt.selected')?.dataset.mood||'',
+    updatedAt:new Date().toISOString()
+  };
+  DB.journal=j;
+  renderJurnal();
+  showToast('Jurnal '+(journalDate===today()?'hari ini':'tanggal '+shortDate(journalDate))+' disimpan ✓');
+}
+
+function deleteJournalEntry(){
+  const j=DB.journal;
+  if(!j[journalDate]) return;
+  delete j[journalDate];
+  DB.journal=j;
+  renderJurnal();
+  showToast('Jurnal dihapus');
+}
+
+function goToTodayJurnal(){
+  journalDate=today(); journalWeekOffset=0; renderJurnal();
+}
+function shiftJurnalWeek(delta){
+  const newOff=journalWeekOffset+delta;
+  if(newOff>0) return;
+  journalWeekOffset=newOff;
+  const wd=getWeekDates(journalWeekOffset);
+  const todayStr=today();
+  if(!wd.includes(journalDate)){
+    const valid=wd.filter(d=>d<=todayStr);
+    journalDate=valid.length?valid[valid.length-1]:wd[0];
+  }
+  renderJurnal();
+}
+
+function viewJournal(date){
+  const e=DB.journal[date];
+  if(!e) return;
+  document.getElementById('modal-j-title').textContent=(e.mood||'')+' '+(e.title||'Jurnal');
+  document.getElementById('modal-j-date').textContent=displayDate(date);
+  document.getElementById('modal-j-body').textContent=e.content;
+  document.getElementById('journal-modal').classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// ── CHARTS ───────────────────────────────────
+const C={green:'#00ff41',gd:'rgba(0,255,65,0.15)',gg:'rgba(0,255,65,0.07)',t:'#5a8c6a',f:"'Share Tech Mono',monospace"};
+function cd(){
+  return{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#060f06',borderColor:'rgba(0,255,65,.3)',borderWidth:1,titleColor:'#00ff41',bodyColor:'#b8ffca',titleFont:{family:C.f},bodyFont:{family:C.f}}},
+    scales:{x:{ticks:{color:C.t,font:{family:C.f,size:9}},grid:{color:C.gg},border:{color:C.gg}},y:{ticks:{color:C.t,font:{family:C.f,size:9}},grid:{color:C.gg},border:{color:C.gg},min:0,max:100}}};
+}
+function makeBarChart(id,labels,data,label){
+  return new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{label,data,backgroundColor:data.map(v=>v>=80?'rgba(0,255,65,.8)':v>=50?'rgba(0,255,65,.45)':'rgba(0,255,65,.2)'),borderColor:C.green,borderWidth:1,borderRadius:2}]},options:cd()});
+}
+function makeLineChart(id,labels,data,label){
+  return new Chart(document.getElementById(id),{type:'line',data:{labels,datasets:[{label,data,borderColor:C.green,backgroundColor:C.gd,pointBackgroundColor:C.green,pointRadius:3,fill:true,tension:.4,borderWidth:2}]},options:cd()});
+}
+
+let cW,cM,cHC,cMood,cY;
+function renderGrafik(){
+  if(!CU) return;
+  // weekly
+  const wL=[],wD=[];
+  for(let w=7;w>=0;w--){let s=0;for(let d=0;d<7;d++) s+=dayPct(dateOffset(-(w*7+d)));wL.push(w===0?'Ini':'W-'+w);wD.push(Math.round(s/7));}
+  if(cW) cW.destroy(); cW=makeBarChart('chart-weekly',wL,wD,'%');
+
+  // monthly
+  const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const jkt=nowJKT();
+  const mL=[],mD=[];
+  for(let m=11;m>=0;m--){
+    const dt=new Date(jkt.getFullYear(),jkt.getMonth()-m,1);
+    const dim=new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate();
+    let s=0,cnt=0;
+    for(let d=0;d<dim;d++){const dd=new Date(dt.getFullYear(),dt.getMonth(),d+1);if(dd>jkt)break;s+=dayPct(fmt(dd));cnt++;}
+    mL.push(months[dt.getMonth()]);mD.push(cnt?Math.round(s/cnt):0);
+  }
+  if(cM) cM.destroy(); cM=makeBarChart('chart-monthly',mL,mD,'%');
+
+  // habits compare
+  const h=DB.habits, hL=h.map(x=>x.name.slice(0,14));
+  const hD=h.map(x=>Math.round(Array.from({length:30},(_,i)=>getLog(dateOffset(-i))[x.id]?1:0).reduce((a,b)=>a+b,0)/30*100));
+  if(cHC) cHC.destroy();
+  const ctx3=document.getElementById('chart-habits-compare');
+  cHC=new Chart(ctx3,{type:'bar',data:{labels:hL,datasets:[{data:hD,backgroundColor:hD.map(v=>v>=80?'rgba(0,255,65,.8)':v>=50?'rgba(0,255,65,.45)':'rgba(0,255,65,.2)'),borderColor:C.green,borderWidth:1,borderRadius:2}]},options:{...cd(),indexAxis:'y',scales:{x:{ticks:{color:C.t,font:{family:C.f,size:9}},grid:{color:C.gg},border:{color:C.gg},min:0,max:100},y:{ticks:{color:C.t,font:{family:C.f,size:9}},grid:{color:C.gg},border:{color:C.gg}}}}});
+
+  // mood
+  const mm={'😄':5,'🙂':4,'😐':3,'😔':2,'😤':2,'😴':3};
+  const moL=[],moD=[];
+  for(let i=13;i>=0;i--){const d=dateOffset(-i);moL.push(shortDate(d));const n=DB.notes[d];moD.push(n?.mood?(mm[n.mood]||3):null);}
+  if(cMood) cMood.destroy();
+  const ctxM=document.getElementById('chart-mood');
+  cMood=new Chart(ctxM,{type:'line',data:{labels:moL,datasets:[{data:moD,borderColor:'#00cfff',backgroundColor:'rgba(0,207,255,.1)',pointBackgroundColor:'#00cfff',pointRadius:5,spanGaps:true,fill:true,tension:.4,borderWidth:2}]},options:{...cd(),scales:{x:{ticks:{color:C.t,font:{family:C.f,size:9}},grid:{color:C.gg},border:{color:C.gg}},y:{ticks:{color:C.t,font:{family:C.f,size:9},callback:v=>['','😔','😔','😐','🙂','😄'][v]||''},grid:{color:C.gg},border:{color:C.gg},min:1,max:5}}}});
+}
+
+function renderTahunan(){
+  if(!CU) return;
+  const year=nowJKT().getFullYear();
+  document.getElementById('heatmap-year-label').textContent=year;
+  const startDay=new Date(year,0,1).getDay();
+  const grid=document.getElementById('heatmap-grid');
+  grid.innerHTML='';
+  for(let i=0;i<startDay;i++){const c=document.createElement('div');c.className='heatmap-cell';c.style.opacity='0';grid.appendChild(c);}
+  const todayS=today();
+  for(let d=0;d<366;d++){
+    const dt=new Date(year,0,1+d); if(dt.getFullYear()!==year) break;
+    const ds=fmt(dt), pct=dayPct(ds);
+    const level=pct===0?0:pct<30?1:pct<60?2:pct<85?3:4;
+    const c=document.createElement('div');
+    c.className='heatmap-cell'; c.dataset.level=level; c.dataset.tip=`${ds}: ${pct}%`;
+    if(ds===todayS) c.style.outline='1px solid var(--green)';
+    grid.appendChild(c);
+  }
+  const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  document.getElementById('heatmap-months-label').innerHTML=months.map(m=>`<span style="flex:1">${m}</span>`).join('');
+
+  const mL=[],mD=[];
+  for(let m=0;m<12;m++){
+    const dim=new Date(year,m+1,0).getDate(); let s=0,cnt=0;
+    for(let d=0;d<dim;d++){const dd=new Date(year,m,d+1);if(dd>nowJKT())break;s+=dayPct(fmt(dd));cnt++;}
+    mL.push(months[m]); mD.push(cnt?Math.round(s/cnt):0);
+  }
+  if(cY) cY.destroy(); cY=makeBarChart('chart-yearly',mL,mD,'%');
+
+  let td=0,tp=0,pd=0;
+  for(let d=0;d<366;d++){
+    const dt=new Date(year,0,1+d); if(dt.getFullYear()!==year||dt>nowJKT()) break;
+    const p=dayPct(fmt(dt)); td++; tp+=p; if(p===100) pd++;
+  }
+  document.getElementById('yearly-stats').innerHTML=`
+    <div class="grid-4" style="gap:.8rem">
+      <div class="stat-box"><div class="stat-num">${td}</div><div class="stat-label">Hari Dilacak</div></div>
+      <div class="stat-box"><div class="stat-num">${td?Math.round(tp/td):0}%</div><div class="stat-label">Rata-rata Tahunan</div></div>
+      <div class="stat-box"><div class="stat-num">${pd}</div><div class="stat-label">Hari 100%</div></div>
+      <div class="stat-box"><div class="stat-num">${calcStreak()}</div><div class="stat-label">Streak Aktif</div></div>
+    </div>`;
+}
+
+// ── PENGATURAN ────────────────────────────────
+function renderPengaturan(){
+  if(!CU) return;
+  const users=getUsers(), u=users[CU];
+  document.getElementById('set-username').textContent=CU;
+  document.getElementById('set-displayname').textContent=u?.displayName||CU;
+  document.getElementById('set-created').textContent=u?.createdAt?new Date(u.createdAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'—';
+  document.getElementById('set-new-dn').value='';
+  document.getElementById('set-old-pw').value='';
+  document.getElementById('set-new-pw').value='';
+  document.getElementById('set-new-pw2').value='';
+  document.getElementById('set-pw-err').textContent='';
+
+  // data summary
+  const h=DB.habits;
+  const logKeys=Object.keys(DB.logs);
+  const jCount=Object.keys(DB.journal).length;
+  const noteKeys=Object.keys(DB.notes).filter(k=>DB.notes[k]?.text);
+  const doneTotal=logKeys.reduce((a,d)=>{
+    const lg=getLog(d); return a+h.filter(x=>lg[x.id]).length;
+  },0);
+  document.getElementById('set-data-summary').innerHTML=
+    `Kebiasaan aktif &nbsp;: <span style="color:var(--green)">${h.length}</span><br>`+
+    `Hari tercatat &nbsp;&nbsp;: <span style="color:var(--green)">${logKeys.length}</span><br>`+
+    `Total ✓ selesai &nbsp;: <span style="color:var(--green)">${doneTotal}</span><br>`+
+    `Entri jurnal &nbsp;&nbsp;&nbsp;: <span style="color:var(--green)">${jCount}</span><br>`+
+    `Catatan harian &nbsp;: <span style="color:var(--green)">${noteKeys.length}</span>`;
+}
+
+function changeDisplayName(){
+  const dn=document.getElementById('set-new-dn').value.trim();
+  if(!dn){showToast('Nama tidak boleh kosong!');return;}
+  const users=getUsers();
+  users[CU].displayName=dn;
+  saveUsers(users);
+  document.getElementById('hdr-un').textContent=dn;
+  renderPengaturan();
+  showToast('Nama berhasil diubah ✓');
+}
+
+function changePassword(){
+  const oldP=document.getElementById('set-old-pw').value;
+  const newP=document.getElementById('set-new-pw').value;
+  const newP2=document.getElementById('set-new-pw2').value;
+  const err=document.getElementById('set-pw-err');
+  err.textContent='';
+  const users=getUsers();
+  if(users[CU].password!==btoa(unescape(encodeURIComponent(oldP)))){err.textContent='Password lama salah';return;}
+  if(newP.length<4){err.textContent='Password baru minimal 4 karakter';return;}
+  if(newP!==newP2){err.textContent='Konfirmasi tidak cocok';return;}
+  users[CU].password=btoa(unescape(encodeURIComponent(newP)));
+  saveUsers(users);
+  document.getElementById('set-old-pw').value='';
+  document.getElementById('set-new-pw').value='';
+  document.getElementById('set-new-pw2').value='';
+  showToast('Password berhasil diubah ✓');
+}
+
+let confirmAction='';
+function openConfirm(type){
+  confirmAction=type;
+  const isAkun=type==='akun';
+  document.getElementById('confirm-title').textContent=isAkun?'⚠ HAPUS AKUN PERMANEN':'⚠ HAPUS SEMUA DATA';
+  document.getElementById('confirm-desc').innerHTML=isAkun
+    ?`Kamu akan menghapus akun <strong style="color:var(--red)">${CU}</strong> beserta SELURUH data secara permanen.<br>Tindakan ini <strong style="color:var(--red)">tidak bisa dibatalkan</strong>.`
+    :`Kamu akan menghapus <strong style="color:var(--red)">seluruh data</strong> (kebiasaan, log, catatan, jurnal).<br>Akun tetap ada, tapi semua data akan hilang.`;
+  document.getElementById('confirm-input').value='';
+  document.getElementById('confirm-err').textContent='';
+  document.getElementById('confirm-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('confirm-input').focus(),200);
+}
+
+function doConfirmAction(){
+  const typed=document.getElementById('confirm-input').value.trim().toLowerCase();
+  const err=document.getElementById('confirm-err');
+  if(typed!==CU){err.textContent='Username tidak cocok. Coba lagi.';return;}
+
+  if(confirmAction==='data'){
+    // hapus semua data user, bukan akunnya
+    ['habits','logs','notes','journal'].forEach(k=>localStorage.removeItem(pfx(k)));
+    closeModal('confirm-modal');
+    renderPengaturan();
+    // reset UI
+    selectedDate=today(); weekOffset=0;
+    showToast('Semua data berhasil dihapus');
+    renderDashboard();
+
+  } else if(confirmAction==='akun'){
+    // hapus semua data
+    ['habits','logs','notes','journal'].forEach(k=>localStorage.removeItem(pfx(k)));
+    // hapus dari daftar user
+    const users=getUsers();
+    delete users[CU];
+    saveUsers(users);
+    closeModal('confirm-modal');
+    doLogout();
+    showToast('Akun berhasil dihapus. Sampai jumpa 👋');
+  }
+}
+
+// ── BOOT ─────────────────────────────────────
+(function(){
+  const sess=getSession();
+  if(sess&&getUsers()[sess]) initApp(sess);
+})();
+</script>
+</body>
+</html>
